@@ -1,0 +1,255 @@
+// The shape of what this app stores.
+//
+// This file is the agent's editing surface: a change
+// to how the app keeps information is a change *here*, and Tellop's data-change
+// pipeline turns it into a reviewed, rehearsed step in `prisma/migrations/`.
+// Nothing edits those step files by hand - they are what has already been applied.
+//
+// The stored names are the ones this template has always used (`people`, `notes`,
+// `owner_id`, ...), kept through `@map`/`@@map` rather than renamed, so an app
+// created before this change reads its own saved information unchanged.
+//
+// There is deliberately no `url` here. Version 7 takes the location from the
+// config file beside it, and Tellop supplies that location per operation rather
+// than trusting whatever a project file happens to say.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../lib/data/generated"
+  moduleFormat = "esm"
+  runtime      = "nodejs"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Person {
+  id       String  @id
+  name     String
+  isSample Boolean @default(false) @map("is_sample")
+  notes    Note[]
+
+  @@map("people")
+}
+
+model Note {
+  id        Int    @id @default(autoincrement())
+  ownerId   String @map("owner_id")
+  body      String
+  createdAt String @map("created_at")
+  owner     Person @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, id], map: "notes_by_owner")
+  @@map("notes")
+}
+
+model StorySettings {
+  id                      String @id
+  ownerId                 String @unique
+  interfaceLanguage       String
+  defaultStoryLanguage    String
+  defaultIllustrationMode String
+  revision                Int
+  createdAt               String
+  updatedAt               String
+}
+
+model StoryCharacter {
+  proposals   StoryProposalSource[] @relation("CharacterProposals")
+  id          String                @id
+  ownerId     String
+  name        String
+  role        String
+  readingBand String
+  interests   String
+  appearance  String
+  photoFile   String?
+  displayFile String?
+  aiCopyFile  String?
+  revision    Int
+  createdAt   String
+  updatedAt   String
+
+  @@index([ownerId, id])
+  @@index([ownerId, updatedAt, id])
+}
+
+model StoryMemory {
+  proposals   StoryProposalSource[] @relation("MemoryProposals")
+  id          String                @id
+  ownerId     String
+  title       String
+  description String
+  photoFile   String?
+  displayFile String?
+  aiCopyFile  String?
+  revision    Int
+  createdAt   String
+  updatedAt   String
+
+  @@index([ownerId, id])
+  @@index([ownerId, updatedAt, id])
+}
+
+model StoryBook {
+  proposals            StoryProposalSource[] @relation("BookProposals")
+  id                   String                @id
+  ownerId              String
+  title                String
+  primaryCharacterName String
+  status               String
+  activeEditionId      String?
+  revision             Int
+  createdAt            String
+  updatedAt            String
+  editions             StoryEdition[]
+
+  @@index([ownerId, id])
+  @@index([ownerId, updatedAt, id])
+}
+
+model StoryEdition {
+  id               String           @id
+  ownerId          String
+  bookId           String
+  editionNumber    Int
+  recipientName    String?
+  title            String
+  language         String
+  readingBand      String
+  sourceKind       String
+  templateKey      String
+  sourceText       String
+  instructions     String
+  charactersJson   String
+  memoriesJson     String
+  illustrationMode String
+  styleKey         String
+  characterGuide   String
+  storyline        String
+  dedication       String
+  pageCount        Int
+  coverFile        String?
+  coverKind        String
+  coverDescription String
+  aiText           Boolean
+  reviewedAt       String?
+  revision         Int
+  createdAt        String
+  updatedAt        String
+  book             StoryBook        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  pages            StoryPage[]
+  references       StoryReference[]
+
+  @@unique([bookId, editionNumber])
+  @@index([ownerId, bookId])
+}
+
+model StoryReference {
+  id                String       @id
+  ownerId           String
+  editionId         String
+  position          Int
+  characterName     String
+  sourceCharacterId String?
+  description       String
+  sourceFile        String?
+  referenceFile     String?
+  createdAt         String
+  edition           StoryEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+
+  @@unique([editionId, position])
+  @@index([ownerId, editionId])
+}
+
+model StoryPage {
+  id               String       @id
+  ownerId          String
+  editionId        String
+  position         Int
+  text             String
+  sceneDescription String
+  pictureFile      String?
+  pictureKind      String
+  pictureAlt       String
+  aiText           Boolean
+  aiPicture        Boolean
+  revision         Int
+  createdAt        String
+  updatedAt        String
+  edition          StoryEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+
+  @@unique([editionId, position])
+  @@index([ownerId, editionId])
+}
+
+model StoryReceipt {
+  id          String @id
+  ownerId     String
+  requestId   String
+  fingerprint String
+  resultJson  String
+  createdAt   String
+
+  @@unique([ownerId, requestId])
+}
+
+model StoryAsset {
+  id        String @id
+  ownerId   String
+  file      String
+  createdAt String
+
+  @@unique([ownerId, file])
+}
+
+model StoryProposal {
+  source           StoryProposalSource?
+  pages            StoryProposalPage[]
+  id               String               @id
+  ownerId          String
+  requestId        String
+  fingerprint      String
+  kind             String
+  state            String
+  bookId           String?
+  editionId        String?
+  pagePosition     Int?
+  expectedRevision Int
+  contentJson      String
+  pictureFile      String?
+  problem          String?
+  createdAt        String
+
+  @@unique([ownerId, requestId])
+  @@index([ownerId, id])
+}
+
+model StoryProposalPage {
+  id               String        @id
+  ownerId          String
+  proposalId       String
+  position         Int
+  text             String
+  sceneDescription String
+  proposal         StoryProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, position])
+  @@index([ownerId, proposalId])
+}
+
+model StoryProposalSource {
+  id                String          @id
+  ownerId           String
+  sourceKind        String
+  sourceBookId      String?
+  sourceCharacterId String?
+  sourceMemoryId    String?
+  proposal          StoryProposal   @relation(fields: [id], references: [id], onDelete: Cascade)
+  sourceBook        StoryBook?      @relation("BookProposals", fields: [sourceBookId], references: [id], onDelete: SetNull)
+  sourceCharacter   StoryCharacter? @relation("CharacterProposals", fields: [sourceCharacterId], references: [id], onDelete: SetNull)
+  sourceMemory      StoryMemory?    @relation("MemoryProposals", fields: [sourceMemoryId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId, id])
+}
