@@ -1,6 +1,6 @@
 # Little storybooks
 
-Create personal storybooks on your Mac with family characters, photos, original story starts and reviewed AI suggestions. Read saved versions and print or save PDF in English or Turkish. Works without AI. Photo-reference drawing requires the matching Tellop service and Mac release. Protected online reading is not available yet.
+Make personal storybooks on your Mac with family characters, special photos and your own words. Start with an original story or review AI suggestions. Choose description-inspired pictures or selected photo references. Read together and print or save PDF. Earlier versions stay available. Photo-reference AI needs the compatible Tellop release. Online, it opens only for you: anyone else you let in sees a closed page.
 
 This app was made with Tellop, the app builder by Pathnomic Labs, on Tellop's
 starting kit: Next.js and React, with Node's own SQLite for what the app keeps.
